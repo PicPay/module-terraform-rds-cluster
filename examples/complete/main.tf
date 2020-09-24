@@ -1,79 +1,81 @@
-provider "aws" {
-  region = var.region
+data "aws_vpc" "default" {
+  filter {
+    name = "tag:Name"
+    values = ["VPC Default"]
+  }
 }
 
-module "vpc" {
-  source = "git::https://github.com/cloudposse/terraform-aws-vpc.git?ref=tags/0.17.0"
-
-  cidr_block = "172.16.0.0/16"
-
-  context = module.this.context
+data "aws_subnet_ids" "database" {
+  vpc_id = data.aws_vpc.default.id
+  filter {
+    name = "tag:Tier"
+    values = ["database"]
+  }
 }
 
-module "subnets" {
-  source = "git::https://github.com/cloudposse/terraform-aws-dynamic-subnets.git?ref=tags/0.28.0"
-
-  availability_zones   = var.availability_zones
-  vpc_id               = module.vpc.vpc_id
-  igw_id               = module.vpc.igw_id
-  cidr_block           = module.vpc.vpc_cidr_block
-  nat_gateway_enabled  = false
-  nat_instance_enabled = false
-
-  context = module.this.context
+data "aws_security_group" "default" {
+  vpc_id = data.aws_vpc.default.id
+  name = "default"
 }
 
-module "rds_cluster" {
-  source = "../../"
+data "aws_route53_zone" "internal" {
+  name         = "lab.picpay.internal."
+  private_zone = true
+}
 
-  engine              = var.engine
-  engine_mode         = var.engine_mode
-  cluster_family      = var.cluster_family
-  cluster_size        = var.cluster_size
-  admin_user          = var.admin_user
-  admin_password      = var.admin_password
-  db_name             = var.db_name
-  instance_type       = var.instance_type
-  vpc_id              = module.vpc.vpc_id
-  subnets             = module.subnets.private_subnet_ids
-  security_groups     = [module.vpc.vpc_default_security_group_id]
-  deletion_protection = var.deletion_protection
-  autoscaling_enabled = var.autoscaling_enabled
+module "rds_cluster_aurora_mysql" {
+  source          = "../../../../../module-terraform-rds-cluster"
+  engine          = "aurora"
+  cluster_family  = "aurora-mysql5.7"
+  cluster_size    = 2
+  name            = "foo"
+  squad           = "infracore"
+  environment     = "lab"
+  costcenter      = "1100"
+  tribe           = "Infra Cloud"
+  admin_user      = "admin1"
+  admin_password  = "Test123456789"
+  db_name         = "foobardb"
+  instance_type   = "db.t2.small"
+  vpc_id          = data.aws_vpc.default.id
+  subnets         = data.aws_subnet_ids.database.ids
+  security_groups = [data.aws_security_group.default.id]
+  zone_id         = data.aws_route53_zone.internal.zone_id
 
   cluster_parameters = [
     {
-      name         = "character_set_client"
-      value        = "utf8"
+      name  = "character_set_client"
+      value = "utf8"
       apply_method = "pending-reboot"
     },
     {
-      name         = "character_set_connection"
-      value        = "utf8"
+      name  = "character_set_connection"
+      value = "utf8"
       apply_method = "pending-reboot"
     },
     {
-      name         = "character_set_database"
-      value        = "utf8"
+      name  = "character_set_database"
+      value = "utf8"
       apply_method = "pending-reboot"
     },
     {
-      name         = "character_set_results"
-      value        = "utf8"
+      name  = "character_set_results"
+      value = "utf8"
       apply_method = "pending-reboot"
     },
     {
-      name         = "character_set_server"
-      value        = "utf8"
+      name  = "character_set_server"
+      value = "utf8"
       apply_method = "pending-reboot"
     },
     {
-      name         = "collation_connection"
-      value        = "utf8_bin"
+      name  = "collation_connection"
+      value = "utf8_bin"
       apply_method = "pending-reboot"
     },
     {
-      name         = "collation_server"
-      value        = "utf8_bin"
+      name  = "collation_server"
+      value = "utf8_bin"
       apply_method = "pending-reboot"
     },
     {
@@ -87,6 +89,4 @@ module "rds_cluster" {
       apply_method = "pending-reboot"
     }
   ]
-
-  context = module.this.context
 }

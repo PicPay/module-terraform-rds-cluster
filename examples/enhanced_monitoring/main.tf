@@ -1,7 +1,26 @@
-# https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBClusterParameterGroup.html
+data "aws_vpc" "default" {
+  filter {
+    name = "tag:Name"
+    values = ["VPC Default"]
+  }
+}
 
-provider "aws" {
-  region = "us-west-1"
+data "aws_subnet_ids" "database" {
+  vpc_id = data.aws_vpc.default.id
+  filter {
+    name = "tag:Tier"
+    values = ["database"]
+  }
+}
+
+data "aws_security_group" "default" {
+  vpc_id = data.aws_vpc.default.id
+  name = "default"
+}
+
+data "aws_route53_zone" "internal" {
+  name         = "lab.picpay.internal."
+  private_zone = true
 }
 
 # create IAM role for monitoring
@@ -32,27 +51,76 @@ data "aws_iam_policy_document" "enhanced_monitoring" {
   }
 }
 
-module "rds_cluster_aurora_postgres" {
-  source          = "../../"
-  engine          = "aurora-postgresql"
-  cluster_family  = "aurora-postgresql9.6"
+module "rds_cluster_aurora_mysql" {
+  source          = "../../../../../module-terraform-rds-cluster"
+  engine          = "aurora"
+  cluster_family  = "aurora-mysql5.7"
   cluster_size    = 2
-  namespace       = "eg"
-  stage           = "dev"
-  name            = "db"
+  name            = "foo"
+  squad           = "infracore"
+  environment     = "lab"
+  costcenter      = "1100"
+  tribe           = "Infra Cloud"
   admin_user      = "admin1"
   admin_password  = "Test123456789"
-  db_name         = "dbname"
-  db_port         = 5432
-  instance_type   = "db.r4.large"
-  vpc_id          = "vpc-xxxxxxx"
-  security_groups = ["sg-xxxxxxxx"]
-  subnets         = ["subnet-xxxxxxxx", "subnet-xxxxxxxx"]
-  zone_id         = "Zxxxxxxxx"
+  db_name         = "foobardb"
+  instance_type   = "db.t2.small"
+  vpc_id          = data.aws_vpc.default.id
+  subnets         = data.aws_subnet_ids.database.ids
+  security_groups = [data.aws_security_group.default.id]
+  zone_id         = data.aws_route53_zone.internal.zone_id
 
   # enable monitoring every 30 seconds
   rds_monitoring_interval = 30
 
   # reference iam role created above
   rds_monitoring_role_arn = aws_iam_role.enhanced_monitoring.arn
+
+  cluster_parameters = [
+    {
+      name  = "character_set_client"
+      value = "utf8"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "character_set_connection"
+      value = "utf8"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "character_set_database"
+      value = "utf8"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "character_set_results"
+      value = "utf8"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "character_set_server"
+      value = "utf8"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "collation_connection"
+      value = "utf8_bin"
+      apply_method = "pending-reboot"
+    },
+    {
+      name  = "collation_server"
+      value = "utf8_bin"
+      apply_method = "pending-reboot"
+    },
+    {
+      name         = "lower_case_table_names"
+      value        = "1"
+      apply_method = "pending-reboot"
+    },
+    {
+      name         = "skip-character-set-client-handshake"
+      value        = "1"
+      apply_method = "pending-reboot"
+    }
+  ]
 }
