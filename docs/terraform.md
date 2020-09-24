@@ -1,4 +1,3 @@
-<!-- markdownlint-disable -->
 ## Requirements
 
 | Name | Version |
@@ -87,6 +86,11 @@
 | vpc\_id | VPC ID to create the cluster in (e.g. `vpc-a22222ee`) | `string` | n/a | yes |
 | vpc\_security\_group\_ids | Additional security group IDs to apply to the cluster, in addition to the provisioned default security group with ingress traffic from existing CIDR blocks and existing security groups | `list(string)` | `[]` | no |
 | zone\_id | Route53 parent zone ID. If provided (not empty), the module will create sub-domain DNS records for the DB master and replicas | `string` | `""` | no |
+| squad | Squad, e.g. 'infracore', 'p2p', 'card', for more [check squad list](https://picpay.atlassian.net/wiki/spaces/U/pages/681738929/Estrutura+de+tribos+-+PicPay) | `string` | `null` | yes |
+| bu | bu, e.g. The default value is 'picpay' | `string` | `picpay` | no |
+| costcenter | costcenter, A number for the cost center, [check cost center list](https://picpay.atlassian.net/wiki/spaces/IC/pages/958530159/PicPay+-+Centro+de+Custos) | `string` | `null` | yes |
+| tribe | tribe, A tribe name, [check tribe name list list](https://picpay.atlassian.net/wiki/spaces/U/pages/681738929/Estrutura+de+tribos+-+PicPay) | `string` | `null` | yes |
+| terraform | to know if the resource was created with terraform | `string` | `true` | no |
 
 ## Outputs
 
@@ -106,5 +110,3 @@
 | security\_group\_arn | Security Group ARN |
 | security\_group\_id | Security Group ID |
 | security\_group\_name | Security Group name |
-
-<!-- markdownlint-restore -->
