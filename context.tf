@@ -19,13 +19,17 @@
 #
 
 module "this" {
-  source = "git::https://github.com/cloudposse/terraform-null-label.git?ref=tags/0.19.2"
+  source = "git::https://github.com/PicPay/module-terraform-null-label.git?ref=tags/0.1.0"
 
   enabled             = var.enabled
-  namespace           = var.namespace
+  application         = var.application
   environment         = var.environment
-  stage               = var.stage
+  squad               = var.squad
+  terraform           = var.terraform
   name                = var.name
+  bu                  = var.bu
+  costcenter          = var.costcenter
+  tribe               = var.tribe
   delimiter           = var.delimiter
   attributes          = var.attributes
   tags                = var.tags
@@ -42,10 +46,14 @@ module "this" {
 variable "context" {
   type = object({
     enabled             = bool
-    namespace           = string
+    application           = string
     environment         = string
-    stage               = string
+    squad               = string
+    terraform           = string
     name                = string
+    bu                  = string
+    costcenter          = string
+    tribe               = string
     delimiter           = string
     attributes          = list(string)
     tags                = map(string)
@@ -56,10 +64,14 @@ variable "context" {
   })
   default = {
     enabled             = true
-    namespace           = null
+    application         = null
     environment         = null
-    stage               = null
+    squad               = null
     name                = null
+    terraform           = "true"
+    bu                  = "PicPay"
+    costcenter          = null
+    tribe               = null
     delimiter           = null
     attributes          = []
     tags                = {}
@@ -83,10 +95,10 @@ variable "enabled" {
   description = "Set to false to prevent the module from creating any resources"
 }
 
-variable "namespace" {
+variable "application" {
   type        = string
   default     = null
-  description = "Namespace, which could be your organization name or abbreviation, e.g. 'eg' or 'cp'"
+  description = "application, which could be your organization name or abbreviation, e.g. 'eg' or 'cp'"
 }
 
 variable "environment" {
@@ -95,16 +107,40 @@ variable "environment" {
   description = "Environment, e.g. 'uw2', 'us-west-2', OR 'prod', 'staging', 'dev', 'UAT'"
 }
 
-variable "stage" {
+variable "squad" {
   type        = string
   default     = null
-  description = "Stage, e.g. 'prod', 'staging', 'dev', OR 'source', 'build', 'test', 'deploy', 'release'"
+  description = "squad, e.g. 'prod', 'staging', 'dev', OR 'source', 'build', 'test', 'deploy', 'release'"
+}
+
+variable "terraform" {
+  type        = bool
+  default     = true
+  description = "Set to true"
 }
 
 variable "name" {
   type        = string
   default     = null
   description = "Solution name, e.g. 'app' or 'jenkins'"
+}
+
+variable "bu" {
+  type        = string
+  default     = "PicPay"
+  description = "Set to PicPay since is the only that we have"
+}
+
+variable "costcenter" {
+  type        = string
+  default     = null
+  description = "Set the cost center, see at https://picpay.atlassian.net/wiki/spaces/IC/pages/958530159/PicPay+-+Centro+de+Custos"
+}
+
+variable "tribe" {
+  type        = string
+  default     = null
+  description = "Set the tribe, see at https://picpay.atlassian.net/wiki/spaces/U/pages/681738929/Estrutura+de+tribos+-+PicPay"
 }
 
 variable "delimiter" {

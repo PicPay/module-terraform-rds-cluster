@@ -3,11 +3,26 @@ locals {
   is_primary_cluster     = var.global_cluster_identifier == null || var.global_cluster_identifier == "" ? true : false
 }
 
+data "aws_vpc" "default" {
+  filter {
+    name = "tag:Name"
+    values = ["VPC Default"]
+  }
+}
+
+data "aws_subnet_ids" "database" {
+  vpc_id = data.aws_vpc.default.id
+  filter {
+    name = "tag:Tier"
+    values = ["database"]
+  }
+}
+
 resource "aws_security_group" "default" {
   count       = module.this.enabled ? 1 : 0
   name        = module.this.id
   description = "Allow inbound traffic from Security Groups and CIDRs"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.default.id
   tags        = module.this.tags
 }
 
@@ -29,7 +44,7 @@ resource "aws_security_group_rule" "ingress_cidr_blocks" {
   from_port         = var.db_port
   to_port           = var.db_port
   protocol          = "tcp"
-  cidr_blocks       = var.allowed_cidr_blocks
+  cidr_blocks       = ["10.0.0.0/8"]
   security_group_id = join("", aws_security_group.default.*.id)
 }
 
@@ -178,7 +193,7 @@ resource "aws_rds_cluster_instance" "default" {
   engine_version                  = var.engine_version
   auto_minor_version_upgrade      = var.auto_minor_version_upgrade
   monitoring_interval             = var.rds_monitoring_interval
-  monitoring_role_arn             = var.enhanced_monitoring_role_enabled ? join("", aws_iam_role.enhanced_monitoring.*.arn) : var.rds_monitoring_role_arn
+  monitoring_role_arn             = var.rds_monitoring_role_arn
   performance_insights_enabled    = var.performance_insights_enabled
   performance_insights_kms_key_id = var.performance_insights_kms_key_id
   availability_zone               = var.instance_availability_zone
@@ -188,7 +203,7 @@ resource "aws_db_subnet_group" "default" {
   count       = module.this.enabled ? 1 : 0
   name        = module.this.id
   description = "Allowed subnets for DB cluster instances"
-  subnet_ids  = var.subnets
+  subnet_ids  = data.aws_subnet_ids.database.ids
   tags        = module.this.tags
 }
 
@@ -236,25 +251,21 @@ locals {
 }
 
 module "dns_master" {
-  source = "git::https://github.com/cloudposse/terraform-aws-route53-cluster-hostname.git?ref=tags/0.6.0"
+  source = "git::https://github.com/cloudposse/terraform-aws-route53-cluster-hostname.git?ref=tags/0.5.0"
 
   enabled = module.this.enabled && length(var.zone_id) > 0 ? true : false
   name    = local.cluster_dns_name
   zone_id = var.zone_id
   records = coalescelist(aws_rds_cluster.primary.*.endpoint, aws_rds_cluster.secondary.*.endpoint, [""])
-
-  context = module.this.context
 }
 
 module "dns_replicas" {
-  source = "git::https://github.com/cloudposse/terraform-aws-route53-cluster-hostname.git?ref=tags/0.6.0"
+  source = "git::https://github.com/cloudposse/terraform-aws-route53-cluster-hostname.git?ref=tags/0.5.0"
 
   enabled = module.this.enabled && length(var.zone_id) > 0 && var.engine_mode != "serverless" ? true : false
   name    = local.reader_dns_name
   zone_id = var.zone_id
   records = coalescelist(aws_rds_cluster.primary.*.reader_endpoint, aws_rds_cluster.secondary.*.reader_endpoint, [""])
-
-  context = module.this.context
 }
 
 resource "aws_appautoscaling_target" "replicas" {
