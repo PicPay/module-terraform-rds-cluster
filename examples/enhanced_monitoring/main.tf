@@ -52,7 +52,7 @@ data "aws_iam_policy_document" "enhanced_monitoring" {
 }
 
 module "rds_cluster_aurora_mysql" {
-  source          = "git::https://github.com/PicPay/module-terraform-rds-cluster.git?ref=master"
+  source          = "git::https://github.com/PicPay/module-terraform-rds-cluster.git?ref=tags/0.1.0"
   engine          = "aurora"
   cluster_family  = "aurora-mysql5.7"
   cluster_size    = 2
