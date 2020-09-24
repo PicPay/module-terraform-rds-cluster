@@ -24,7 +24,7 @@ data "aws_route53_zone" "internal" {
 }
 
 module "rds_cluster_aurora_mysql" {
-  source          = "../../../../../module-terraform-rds-cluster"
+  source          = "git::https://github.com/PicPay/module-terraform-rds-cluster.git?ref=master"
   engine          = "aurora"
   cluster_family  = "aurora-mysql5.7"
   cluster_size    = 2
