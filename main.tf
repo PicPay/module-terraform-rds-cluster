@@ -3,26 +3,11 @@ locals {
   is_primary_cluster     = var.global_cluster_identifier == null || var.global_cluster_identifier == "" ? true : false
 }
 
-data "aws_vpc" "default" {
-  filter {
-    name = "tag:Name"
-    values = ["VPC Default"]
-  }
-}
-
-data "aws_subnet_ids" "database" {
-  vpc_id = data.aws_vpc.default.id
-  filter {
-    name = "tag:Tier"
-    values = ["database"]
-  }
-}
-
 resource "aws_security_group" "default" {
   count       = module.this.enabled ? 1 : 0
   name        = module.this.id
   description = "Allow inbound traffic from Security Groups and CIDRs"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = var.vpc_id
   tags        = module.this.tags
 }
 
@@ -203,7 +188,7 @@ resource "aws_db_subnet_group" "default" {
   count       = module.this.enabled ? 1 : 0
   name        = module.this.id
   description = "Allowed subnets for DB cluster instances"
-  subnet_ids  = data.aws_subnet_ids.database.ids
+  subnet_ids  = var.subnets
   tags        = module.this.tags
 }
 
