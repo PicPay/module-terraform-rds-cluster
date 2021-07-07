@@ -19,7 +19,7 @@
 #
 
 module "this" {
-  source = "git::ssh://github.com/PicPay/module-terraform-null-label.git?ref=tags/0.2.0"
+  source = "git::ssh://git@github.com/PicPay/module-terraform-null-label.git?ref=0.2.0"
 
   enabled             = var.enabled
   application         = var.application
