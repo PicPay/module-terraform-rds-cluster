@@ -19,7 +19,7 @@
 #
 
 module "this" {
-  source = "git::https://github.com/PicPay/module-terraform-null-label.git?ref=tags/0.1.0"
+  source = "git::ssh://github.com/PicPay/module-terraform-null-label.git?ref=tags/0.2.0"
 
   enabled             = var.enabled
   application         = var.application
@@ -46,7 +46,7 @@ module "this" {
 variable "context" {
   type = object({
     enabled             = bool
-    application           = string
+    application         = string
     environment         = string
     squad               = string
     terraform           = string
